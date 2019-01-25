@@ -1,0 +1,7 @@
+[package]
+name = "chat_client"
+version = "0.1.0"
+authors = ["Артём Павлов [Artyom Pavlov] <newpavlov@gmail.com>"]
+edition = "2018"
+
+[dependencies]
