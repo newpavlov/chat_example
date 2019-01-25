@@ -23,23 +23,22 @@ fn handle_client(stream: io::Result<TcpStream>, history: History) -> io::Result<
     stream.set_read_timeout(Some(Duration::from_millis(100)))?;
     let mut stream = BufReader::new(stream);
     let mut pos = {
-        let n = history.lock().unwrap().len();
-        if n < 10 {
-            0
-        } else {
-            n - 10
-        }
+        history.lock().unwrap()
+            .len()
+            .saturating_sub(10)
     };
 
+    let mut nickname = String::new();
+    let mut line = String::new();
+
     loop {
-        let mut line = String::new();
         let res = stream.read_line(&mut line);
-        match res {
+        let n = match res {
             Ok(0) => {
                 println!("connection closed: {:?}", addr);
                 return Ok(());
             },
-            Ok(_) => (),
+            Ok(n) => n,
             Err(err) => {
                 if err.kind() == io::ErrorKind::WouldBlock {
                     let history_lock = history.lock().unwrap();
@@ -51,11 +50,23 @@ fn handle_client(stream: io::Result<TcpStream>, history: History) -> io::Result<
             },
         };
 
+        if nickname == "" {
+            nickname = line[..n-1].to_string();
+            line.clear();
+            println!("{} connected", nickname);
+            continue;
+        }
+
         let mut history_lock = history.lock().unwrap();
         send_history(&history_lock, &mut pos, stream.get_mut())?;
-        println!("client wrote: [{}] {:?}",
-            history_lock.len(), line);
-        history_lock.push(line);
+        println!("{} wrote: [{}] {:?}",
+            nickname, history_lock.len(), line);
+
+        let mut msg_w_nickname = nickname.clone();
+        msg_w_nickname.push_str(": ");
+        msg_w_nickname.push_str(&line);
+        line.clear();
+        history_lock.push(msg_w_nickname);
         pos += 1;
     }
 }

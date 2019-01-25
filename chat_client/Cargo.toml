@@ -3,5 +3,7 @@ name = "chat_client"
 version = "0.1.0"
 authors = ["Артём Павлов [Artyom Pavlov] <newpavlov@gmail.com>"]
 edition = "2018"
+description = "Simple char client example"
 
 [dependencies]
+structopt = { version = "0.2", default-features = false }
